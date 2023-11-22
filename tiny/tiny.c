@@ -14,8 +14,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char *method);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs, char *method);
-void clienterror(int fd, char *cause, char *errnum, char *shortmsg,
-                 char *longmsg);
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
 
 int main(int argc, char **argv) {
   int listenfd, connfd;
@@ -61,10 +60,10 @@ void doit(int fd)
     clienterror(fd, method, "501", "Not implemented", "Tiny does not implement this method");
     return;
   }
-  if (strcasecmp(method, "GET")!=0) { // method가 GET이 아니면 error 메세지 출력
-      clienterror(fd, method, "501", "Not implemented", "Tiny does not implement this method");
-      return;
-  }
+  // if (!(strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) { 
+  //   clienterror(fd, method, "501", "Not implemented", "Tiny does not implement this method");
+  //   return;
+  // }
   read_requesthdrs(&rio);
 
   /* GET 요청에서 URI를 파싱 */
@@ -190,14 +189,14 @@ void serve_static(int fd, char *filename, int filesize, char *method)
     // Munmap(srcp, filesize); // 필요하지 않은 메모리 매핑을 해제
     free(srcp);
   }
-  else {
-    srcfd = Open(filename, O_RDONLY, 0);
-    // mmap: 큰 파일을 메모리에 매핑하거나, 여러 프로세스가 공유하는 메모리 영역을 생성하는데 주로 사용
-    srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
-    Close(srcfd);
-    Rio_writen(fd, srcp, filesize);
-    Munmap(srcp, filesize);
-  }
+  // else {
+  //   srcfd = Open(filename, O_RDONLY, 0);
+  //   // mmap: 큰 파일을 메모리에 매핑하거나, 여러 프로세스가 공유하는 메모리 영역을 생성하는데 주로 사용
+  //   srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
+  //   Close(srcfd);
+  //   Rio_writen(fd, srcp, filesize);
+  //   Munmap(srcp, filesize);
+  // }
 }
 
   
