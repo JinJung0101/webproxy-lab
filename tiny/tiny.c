@@ -32,10 +32,8 @@ int main(int argc, char **argv) {
   listenfd = Open_listenfd(argv[1]);
   while (1) {
     clientlen = sizeof(clientaddr);
-    connfd = Accept(listenfd, (SA *)&clientaddr,
-                    &clientlen);  // line:netp:tiny:accept
-    Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,
-                0);
+    connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);  // line:netp:tiny:accept
+    Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     doit(connfd);   // line:netp:tiny:doit
     Close(connfd);  // line:netp:tiny:close
@@ -194,6 +192,7 @@ void serve_static(int fd, char *filename, int filesize, char *method)
   }
   else {
     srcfd = Open(filename, O_RDONLY, 0);
+    // mmap: 큰 파일을 메모리에 매핑하거나, 여러 프로세스가 공유하는 메모리 영역을 생성하는데 주로 사용
     srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
     Close(srcfd);
     Rio_writen(fd, srcp, filesize);
@@ -237,9 +236,11 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
 
   if (Fork() == 0) { // 자식 프로세스를 생성
     /* Real server would set all CGI vars here */
-    setenv("QUERY_STRING", cgiargs, 1);
-    setenv("REQUEST_METHOD", method, 1);
-    Dup2(fd, STDOUT_FILENO); /* Redirect stdout to client */
+    setenv("QUERY_STRING", cgiargs, 1); // QUERY_STRING(CGI 프로그램에게 전달되는 인자 담고 있음)설정
+    setenv("REQUEST_METHOD", method, 1); // REQUEST_METHOD(HTTP 요청 메소드 담고 있음)설정
+    // 파일 디스크립터를 복제하여 표준 출력(STDOUT_FILENO)에 할당
+    Dup2(fd, STDOUT_FILENO); 
+    // filename으로 지정된 CGI 프로그램을 실행 Dup2 함수를 통해 리디렉션된 표준 출력을 통해 클라이언트에게 전송
     Execve(filename, emptylist, environ); /* Run CGI program */
   }
   Wait(NULL); /* Parent waits for and reaps child */
